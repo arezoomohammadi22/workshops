@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2
+  template:
+    metadata:
+      labels:
+        app: app2
+    spec:
+      imagePullSecrets:
+        - name: nexus
+      containers:
+      - name: app2
+        image: registry.sananetco.com:8443/app2:latest
+        ports:
+        - containerPort: 5000
