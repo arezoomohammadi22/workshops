@@ -1,16 +1,27 @@
 stages:
+  - test
   - build
   - deploy
 
 variables:
   IMAGE_NAME: $IMAGE_NAME
 
+test:
+  stage: test
+  image: python:3.10
+  script:
+    - pip install flask
+    - python -m unittest discover tests
+  only:
+    - main
+
 build:
   stage: build
   script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
     - echo $NEXUS_PASSWORD | docker login -u $NEXUS_USER --password-stdin $REGISTRY_URL
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_NAME:latest
   only:
     - main
 
