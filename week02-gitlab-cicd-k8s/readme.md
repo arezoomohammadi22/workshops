@@ -1,17 +1,23 @@
-# 🛠️ Week 02 - CI/CD with GitLab and Kubernetes
+# 🛠️ Week 02 - CI/CD with GitLab and Kubernetes (Final Improved Version)
 
-This workshop covers how to automate Docker image builds and Kubernetes deployments using GitLab CI/CD.
+This version of the project includes:
+- ✅ A `test` stage using `unittest`
+- ✅ Docker image tagging best practices (`latest` + commit SHA)
+- ✅ Readiness and liveness probes for Kubernetes
+- ✅ GitLab CI/CD pipeline with test → build → deploy flow
 
 ---
 
 ## 📦 Project Structure
 
 ```
-week02-gitlab-cicd-k8s/
+week02-gitlab-cicd-k8s-improved/
 ├── app/
 │   ├── app.py
 │   ├── requirements.txt
 │   └── Dockerfile
+├── tests/
+│   └── test_app.py
 ├── .gitlab-ci.yml
 ├── k8s/
 │   ├── deployment.yaml
@@ -22,128 +28,101 @@ week02-gitlab-cicd-k8s/
 
 ---
 
-## 🎯 Objectives
+## 🚀 CI/CD Pipeline (.gitlab-ci.yml)
 
-By the end of this workshop, you'll be able to:
-- Write GitLab CI/CD pipelines
-- Build and push Docker images to a registry (e.g., Nexus)
-- Use imagePullSecrets in Kubernetes
-- Automatically deploy your app to Kubernetes from GitLab
+### Stages:
+- `test`: Run Python unit tests with `unittest`
+- `build`: Build and push Docker image with two tags
+  - `:latest`
+  - `:$CI_COMMIT_SHORT_SHA`
+- `deploy`: Deploy to Kubernetes using kubectl
 
 ---
 
-## 🚀 Step-by-Step Guide
+## 🔧 Configure GitLab CI/CD Variables
 
-### 1. Clone the Project
+Go to your project on GitLab:  
+**Settings → CI/CD → Variables** and define these:
+
+| Variable Name     | Example Value                        | Masked | Protected |
+|------------------|--------------------------------------|--------|-----------|
+| `NEXUS_USER`     | your-nexus-username                  | ✅     | ✅        |
+| `NEXUS_PASSWORD` | your-nexus-password/token            | ✅     | ✅        |
+| `REGISTRY_URL`   | nexus.example.com:8082               | ❌     | ✅        |
+| `IMAGE_NAME`     | nexus.example.com/app/week2-app      | ❌     | ✅        |
+
+---
+
+## 🔬 Testing Stage
+
+Using Python’s built-in `unittest`:
 
 ```bash
-git clone https://gitlab.com/your-namespace/your-project.git
-cd your-project
+python -m unittest discover tests
 ```
 
----
-
-### 2. Prepare the App
-
-Inside `app/` is a simple Flask application with one route (`/`).
-
-### 3. Build & Push Docker Image (Handled by GitLab CI/CD)
-
-GitLab will:
-- Build the image
-- Push to your Nexus or GitLab registry
-- Deploy to K8s using kubectl
+Tests:
+- Status code 200 on GET `/`
+- Expected message returned
 
 ---
 
-### 4. Configure GitLab CI/CD Variables
+## 🐳 Docker Image Tagging
 
-Go to your GitLab Project → **Settings → CI/CD → Variables**
-
-| Variable Name       | Value                        | Protected | Masked |
-|---------------------|------------------------------|-----------|--------|
-| `NEXUS_USER`        | your-nexus-username          | ✅        | ✅     |
-| `NEXUS_PASSWORD`    | your-nexus-password/token    | ✅        | ✅     |
-| `REGISTRY_URL`      | nexus.example.com:8082       | ✅        |        |
-| `IMAGE_NAME`        | nexus.example.com/app/week2  | ✅        |        |
-
----
-
-### 5. GitLab CI/CD Pipeline File: `.gitlab-ci.yml`
-
-```yaml
-stages:
-  - build
-  - deploy
-
-variables:
-  IMAGE_NAME: $IMAGE_NAME
-
-build:
-  stage: build
-  script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
-    - echo $NEXUS_PASSWORD | docker login -u $NEXUS_USER --password-stdin $REGISTRY_URL
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-  only:
-    - main
-
-deploy:
-  stage: deploy
-  script:
-    - kubectl apply -f k8s/
-  only:
-    - main
+```bash
+docker build -t myimage:$CI_COMMIT_SHORT_SHA -t myimage:latest .
 ```
+Both `:latest` and the short SHA tag are pushed to the registry.
 
 ---
 
-### 6. Kubernetes Manifests
+## ☸️ Kubernetes Configuration
 
-All YAMLs are in the `k8s/` folder:
-- `deployment.yaml`
-- `service.yaml`
-- `ingress.yaml`
-
-Ensure your cluster has a secret called `nexus-registry-secret`.
+Includes:
+- **Readiness Probe**
+- **Liveness Probe**
+- Image from registry with dynamic tag
+- Ingress configured for custom domain
 
 ---
 
-### 7. Register a GitLab Runner (if not using shared runners)
-
-On your GitLab server or VM:
+## 🤖 GitLab Runner Registration (if needed)
 
 ```bash
 sudo gitlab-runner register
 ```
 
-When prompted, answer:
-
+When prompted:
 ```
 URL: https://gitlab.com/
-Token: <your project/group runner token>
+Token: <your token>
 Description: docker-runner
 Executor: docker
 Docker image: docker:latest
 ```
 
-> ⚠️ Make sure Docker is installed and Docker socket is mounted if needed.
-
 ---
 
-## 🌐 Accessing Your App
+## 🌍 Accessing the Application
 
-Make sure your Ingress controller is working, and add this to `/etc/hosts`:
+Add this line to `/etc/hosts` for local testing:
 
 ```
 127.0.0.1 week2.lab.sananetco.com
 ```
 
-Then open `http://week2.lab.sananetco.com/`
+Then open:
+
+```
+http://week2.lab.sananetco.com
+```
 
 ---
 
-## 🧠 Summary
+## ✅ Summary
 
-✅ You now have an automated CI/CD pipeline from code to Kubernetes!  
-Push code → GitLab builds → image pushed → app deployed 🚀
+You've built a real-world, automated CI/CD pipeline:
+- From GitLab commit to image build
+- From image to Kubernetes deployment
+- With built-in testing and probes for reliability
+
