@@ -16,6 +16,18 @@ spec:
         - name: nexus-registry-secret
       containers:
         - name: week2-app
-          image: nexus.example.com:8082/devops/week2-app:$CI_COMMIT_SHORT_SHA
+          image: nexus.example.com:8082/devops/week2-app:latest
           ports:
             - containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
