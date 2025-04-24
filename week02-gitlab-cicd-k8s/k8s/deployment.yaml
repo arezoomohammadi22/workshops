@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: week2-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: week2-app
+  template:
+    metadata:
+      labels:
+        app: week2-app
+    spec:
+      imagePullSecrets:
+        - name: nexus-registry-secret
+      containers:
+        - name: week2-app
+          image: nexus.example.com:8082/devops/week2-app:$CI_COMMIT_SHORT_SHA
+          ports:
+            - containerPort: 5000

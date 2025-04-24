@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: week2-service
+spec:
+  selector:
+    app: week2-app
+  ports:
+    - port: 80
+      targetPort: 5000
