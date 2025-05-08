@@ -4,30 +4,29 @@ stages:
   - deploy
 
 variables:
-  IMAGE_NAME: $IMAGE_NAME
-
-test:
-  stage: test
-  image: python:3.10
-  script:
-    - pip install flask
-    - python -m unittest discover tests
-  only:
-    - main
+  IMAGE_TAG: $NEXUS_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA
 
 build:
   stage: build
   script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
-    - echo $NEXUS_PASSWORD | docker login -u $NEXUS_USER --password-stdin $REGISTRY_URL
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $IMAGE_NAME:latest
+    - docker login -u "$NEXUS_USER" -p "$NEXUS_PASSWORD" $NEXUS_REGISTRY
+    - docker build -t $NEXUS_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA -f app/Dockerfile .
+    - docker push $NEXUS_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA
   only:
     - main
+  tags:
+    - docker
 
 deploy:
   stage: deploy
+  image: docker.arvancloud.ir/dtzar/helm-kubectl:latest
+  before_script:
+    - echo "$KUBE_CONFIG" > kubeconfig.yaml
+    - export KUBECONFIG=$PWD/kubeconfig.yaml
   script:
-    - kubectl apply -f k8s/
+    - sed "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml | kubectl apply -f - 
+    - kubectl apply -f k8s/service.yaml && kubectl apply -f k8s/ingress.yaml
   only:
     - main
+  tags:
+    - docker
