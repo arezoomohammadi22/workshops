@@ -13,10 +13,10 @@ spec:
         app: week2-app
     spec:
       imagePullSecrets:
-        - name: nexus-registry-secret
+        - name: nexus
       containers:
         - name: week2-app
-          image: nexus.example.com:8082/devops/week2-app:latest
+          image: IMAGE_PLACEHOLDER
           ports:
             - containerPort: 5000
           livenessProbe:
