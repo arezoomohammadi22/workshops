@@ -1,18 +1,43 @@
 stages:
   - build
+  - test
+  - package
   - deploy
+  - notify
+
+variables:
+  DOCKER_IMAGE: "web-app"
+  HELM_CHART_DIR: "./charts/web-app"
+  KUBE_CONTEXT: "kubernetes"
+
 
 build:
   stage: build
-  image: docker:latest
   script:
-    - docker build -t registry.yourdomain.com/your-repo/image:latest .
-    - docker push registry.yourdomain.com/your-repo/image:latest
+    - echo $CI_REGISTRY_PASS | docker login -u $CI_REGISTRY_USER  --password-stdin $CI_NEXUS_REGISTRY
+    - docker build -t $CI_NEXUS_REGISTRY/$DOCKER_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_NEXUS_REGISTRY/$DOCKER_IMAGE:$CI_COMMIT_SHA
+  only:
+    - main
+  tags:
+    - docker
 
 deploy:
   stage: deploy
-  image: alpine/helm:3.12.0
+  image: docker.arvancloud.ir/dtzar/helm-kubectl:latest
   script:
-    - helm upgrade --install myapp ./helm/myapp --namespace mynamespace --create-namespace
+    - echo "$KUBECONFIG_CONTENT" > kubeconfig
+    - helm upgrade --install web-app $HELM_CHART_DIR --namespace devops --set image.tag=$CI_COMMIT_SHA --kubeconfig ./kubeconfig
   only:
     - main
+  tags:
+    - docker
+
+notify:
+  stage: notify
+  script:
+    - echo "Deployment Successful!"
+  only:
+    - main
+  tags:
+    - docker
