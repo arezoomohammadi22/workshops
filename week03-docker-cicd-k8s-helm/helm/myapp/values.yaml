@@ -1,23 +1,10 @@
-replicaCount: 2
-
 image:
-  repository: registry.gitlab.com/your-repo/image
-  tag: latest
-  pullPolicy: IfNotPresent
+  repository: "registry.sananetco.com:8443/web-app"
+  tag: "latest"
+
+replicaCount: 1
 
 service:
+  name: web-app
   type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: true
-  className: ""
-  annotations: {}
-  hosts:
-    - host: myapp.example.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-
-resources: {}
+  port: 8080
